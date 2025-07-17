@@ -54,6 +54,8 @@ dependencies {
     implementation(libs.play.services.location)
     // Optional: Kotlin Coroutines for asynchronous operations
     implementation(libs.kotlinx.coroutines.android)
+    // http
+    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

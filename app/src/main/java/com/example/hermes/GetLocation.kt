@@ -9,22 +9,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
-import okhttp3.*
-import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 class GetLocation : ComponentActivity() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
-    private val client = OkHttpClient() // HTTP client
+    private lateinit var sendData: SendData
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Initialize fused location client
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        // Initialize SendData instance
+        sendData = SendData(this)
 
         // Create location request (every 3 seconds)
         locationRequest = LocationRequest.Builder(
@@ -43,7 +43,7 @@ class GetLocation : ComponentActivity() {
                         longitude = location.longitude,
                         message = "hello from hermes"
                     )
-                    sendLocationToServer(data)
+                    sendData.sendLocationToServer(data)
                 }
             }
         }
@@ -66,7 +66,7 @@ class GetLocation : ComponentActivity() {
                     longitude = 17.0,
                     message = "hello from hermes"
                 )
-                sendLocationToServer(fallbackData)
+                sendData.sendLocationToServer(fallbackData)
             }
         }
 
@@ -98,52 +98,6 @@ class GetLocation : ComponentActivity() {
             Looper.getMainLooper()
         )
         Toast.makeText(this, "Started location updates", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun sendLocationToServer(data: LocationData) {
-        // Replace with actual IP later
-        val serverUrl = "http://192.168.1.100:5000/location"
-
-        val requestBody = FormBody.Builder()
-            .add("latitude", data.latitude.toString())
-            .add("longitude", data.longitude.toString())
-            .add("message", data.message)
-            .build()
-
-        val request = Request.Builder()
-            .url(serverUrl)
-            .post(requestBody)
-            .build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread {
-                    Toast.makeText(
-                        this@GetLocation,
-                        "Failed to send data: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                runOnUiThread {
-                    if (response.isSuccessful) {
-                        Toast.makeText(
-                            this@GetLocation,
-                            "Location sent successfully",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        Toast.makeText(
-                            this@GetLocation,
-                            "Server error: ${response.code}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-            }
-        })
     }
 
     override fun onDestroy() {
