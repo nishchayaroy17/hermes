@@ -49,6 +49,12 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // Google Play Services Location (for FusedLocationProviderClient)
+    implementation(libs.play.services.location)
+    // Optional: Kotlin Coroutines for asynchronous operations
+    implementation(libs.kotlinx.coroutines.android)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
