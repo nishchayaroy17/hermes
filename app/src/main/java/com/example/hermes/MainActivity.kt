@@ -74,7 +74,7 @@ fun LocationDisplay(data: LocationData) {
 fun LocationDisplayPreview() {
     HermesTheme {
         LocationDisplay(
-            LocationData(28.6139, 77.2090, "Hello from Hermes")
+            LocationData(17.0, 77.2090, "Hello from Hermes")
         )
     }
 }

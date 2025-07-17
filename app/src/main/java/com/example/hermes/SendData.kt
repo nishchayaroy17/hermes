@@ -1,6 +1,7 @@
 package com.example.hermes
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import okhttp3.*
@@ -16,7 +17,7 @@ class SendData(private val context: Context) {
     fun sendLocationToServer(data: LocationData) {
 
         // Update with actual URL
-        val serverUrl = "http://192.168.1.100:5000/location"
+        val serverUrl = "http://10.73.169.85:9590/location"
 
         // Convert LocationData to JSON
         val jsonObject = JSONObject().apply {
@@ -57,8 +58,9 @@ class SendData(private val context: Context) {
                         Toast.makeText(
                             context,
                             "Server error: ${response.code}",
-                            Toast.LENGTH_SHORT
+                            Toast.LENGTH_LONG
                         ).show()
+                        Log.e("SendData", "Server error: ${response.code}")
                     }
                 }
             }
