@@ -4,26 +4,34 @@ import android.content.Context
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import org.json.JSONObject
 import java.io.IOException
 
-class SendData(private val context: Context){
+class SendData(private val context: Context) {
 
     private val client = OkHttpClient()
 
-    // Function to send location data to server
+    // Function to send location data as JSON
     fun sendLocationToServer(data: LocationData) {
-        // Replace this URL with your actual server IP
+
+        // Update with actual URL
         val serverUrl = "http://192.168.1.100:5000/location"
 
-        val requestBody = FormBody.Builder()
-            .add("latitude", data.latitude.toString())
-            .add("longitude", data.longitude.toString())
-            .add("message", data.message)
-            .build()
+        // Convert LocationData to JSON
+        val jsonObject = JSONObject().apply {
+            put("latitude", data.latitude)
+            put("longitude", data.longitude)
+            put("message", data.message)
+        }
+
+        val jsonMediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+        val requestBody = RequestBody.create(jsonMediaType, jsonObject.toString())
 
         val request = Request.Builder()
             .url(serverUrl)
             .post(requestBody)
+            .header("Content-Type", "application/json")
             .build()
 
         client.newCall(request).enqueue(object : Callback {

@@ -2,7 +2,6 @@ package com.example.hermes
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Bundle
 import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -10,23 +9,21 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 
-class GetLocation : ComponentActivity() {
+class GetLocation(private val activity: ComponentActivity) {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationCallback: LocationCallback
     private lateinit var locationRequest: LocationRequest
+    private lateinit var locationCallback: LocationCallback
     private lateinit var sendData: SendData
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    // Callback to pass location data to MainActivity
+    var onLocationUpdate: ((LocationData) -> Unit)? = null
 
-        // Initialize fused location client
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+    init {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
+        sendData = SendData(activity)
 
-        // Initialize SendData instance
-        sendData = SendData(this)
-
-        // Create location request (every 3 seconds)
+        // Create location request
         locationRequest = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY, 3000L
         )
@@ -37,48 +34,48 @@ class GetLocation : ComponentActivity() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val location = result.lastLocation
-                if (location != null) {
-                    val data = LocationData(
+                val data = if (location != null) {
+                    LocationData(
                         latitude = location.latitude,
                         longitude = location.longitude,
-                        message = "hello from hermes"
+                        message = "Hello from Hermes"
                     )
-                    sendData.sendLocationToServer(data)
+                } else {
+                    // Fallback if location is null
+                    LocationData(17.0, 17.0, "Hello from Hermes (default)")
                 }
+
+                // Update UI
+                onLocationUpdate?.invoke(data)
+
+                // Send to server
+                sendData.sendLocationToServer(data)
             }
         }
-
-        // Request location permission
-        requestLocationPermission()
     }
 
-    private fun requestLocationPermission() {
-        val permissionLauncher = registerForActivityResult(
+    fun requestLocationPermissionAndStartUpdates() {
+        val permissionLauncher = activity.registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted: Boolean ->
             if (isGranted) {
                 startLocationUpdates()
             } else {
-                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show()
-                // Use default coordinates (17, 17)
-                val fallbackData = LocationData(
-                    latitude = 17.0,
-                    longitude = 17.0,
-                    message = "hello from hermes"
-                )
-                sendData.sendLocationToServer(fallbackData)
+                Toast.makeText(activity, "Location permission denied", Toast.LENGTH_SHORT).show()
+                // Send fallback location
+                val fallback = LocationData(17.0, 17.0, "Hello from Hermes (default)")
+                onLocationUpdate?.invoke(fallback)
+                sendData.sendLocationToServer(fallback)
             }
         }
 
         when {
             ActivityCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_FINE_LOCATION
+                activity, Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED -> {
-                // Permission already granted
                 startLocationUpdates()
             }
             else -> {
-                // Request permission
                 permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
         }
@@ -86,23 +83,20 @@ class GetLocation : ComponentActivity() {
 
     private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_FINE_LOCATION
+                activity, Manifest.permission.ACCESS_FINE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            return // Permission not granted
+            return
         }
-
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
             locationCallback,
             Looper.getMainLooper()
         )
-        Toast.makeText(this, "Started location updates", Toast.LENGTH_SHORT).show()
+        Toast.makeText(activity, "Started location updates", Toast.LENGTH_SHORT).show()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // Stop location updates to prevent memory leaks
+    fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 }
